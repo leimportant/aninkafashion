@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aninka Fashion Chat</title>
+    <style>
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: #f7f7f8; color: #111; }
+      header { padding: 16px; background: #111; color: #fff; }
+      main { max-width: 840px; margin: 0 auto; padding: 16px; }
+      .chat { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 16px; height: 70vh; overflow-y: auto; }
+      .msg { margin: 8px 0; padding: 10px 12px; border-radius: 10px; max-width: 80%; }
+      .user { background: #e9f5ff; margin-left: auto; }
+      .assistant { background: #f2f2f2; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 8px; }
+      .card { border: 1px solid #eee; border-radius: 10px; overflow: hidden; background: #fff; }
+      .card img { width: 100%; height: 160px; object-fit: cover; background: #fafafa; }
+      .card .info { padding: 8px 10px; }
+      .price { font-weight: 700; }
+      form { display: flex; gap: 8px; margin-top: 12px; }
+      input[type="text"] { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ccc; }
+      button { padding: 12px 16px; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; }
+      button:disabled { opacity: .6; cursor: not-allowed; }
+      .note { font-size: 12px; color: #666; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Aninka Fashion</strong> • AI Assistant
+    </header>
+    <main>
+      <div class="chat" id="chat"></div>
+      <form id="form">
+        <input id="input" type="text" placeholder="Tulis pertanyaan Anda..." autocomplete="off" />
+        <div style="display:flex; gap:8px;">
+          <button type="submit">Kirim</button>
+          <button id="clear" type="button" style="background:#c22">Clear</button>
+        </div>
+      </form>
+      <div class="note">Bahasa utama: Indonesia. Contoh: "Ada gamis dress brokat warna krem?"</div>
+    </main>
+
+    <script>
+      const chat = document.getElementById('chat');
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
+      const STORAGE_KEY = 'aninkaChatMessages';
+      function defaultConversation() {
+        return [
+          { role: 'assistant', content: 'Halo! Saya asisten AI Aninka Fashion. Ada yang bisa saya bantu?' }
+        ];
+      }
+      let messages = [];
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        messages = saved ? JSON.parse(saved) : defaultConversation();
+        if (!Array.isArray(messages) || messages.length === 0) messages = defaultConversation();
+      } catch { messages = defaultConversation(); }
+
+      function render() {
+        chat.innerHTML = '';
+        for (const m of messages) {
+          const div = document.createElement('div');
+          div.className = `msg ${m.role === 'user' ? 'user' : 'assistant'}`;
+          const p = document.createElement('div');
+          p.textContent = m.content;
+          div.appendChild(p);
+          if (m.products && m.products.length) {
+            const grid = document.createElement('div');
+            grid.className = 'grid';
+            m.products.forEach(prod => {
+              const card = document.createElement('div');
+              card.className = 'card';
+              const img = document.createElement('img');
+              img.src = prod.imageUrl || '';
+              img.alt = prod.name || '';
+              const info = document.createElement('div');
+              info.className = 'info';
+              const name = document.createElement('div');
+              name.textContent = prod.name || '';
+              const price = document.createElement('div');
+              price.className = 'price';
+              price.textContent = prod.price ? `Rp${prod.price}` : '';
+              const cat = document.createElement('div');
+              cat.className = 'cat';
+              cat.textContent = prod.category || '';
+              info.appendChild(name);
+              info.appendChild(price);
+              info.appendChild(cat);
+              card.appendChild(img);
+              card.appendChild(info);
+              grid.appendChild(card);
+            });
+            div.appendChild(grid);
+          }
+          chat.appendChild(div);
+        }
+        chat.scrollTop = chat.scrollHeight;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch {}
+      }
+
+      render();
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        messages.push({ role: 'user', content: text });
+        input.value = '';
+        render();
+        form.querySelector('button[type="submit"]').disabled = true;
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages })
+          });
+      // Cookies akan dikirim otomatis oleh browser untuk origin yang sama
+          const data = await res.json();
+          const content = data?.message || data?.error || 'Maaf, terjadi kesalahan.';
+          const products = Array.isArray(data?.products) ? data.products : [];
+          messages.push({ role: 'assistant', content, products });
+        } catch (err) {
+          messages.push({ role: 'assistant', content: 'Maaf, jaringan bermasalah.' });
+        } finally {
+          form.querySelector('button[type="submit"]').disabled = false;
+          render();
+        }
+      });
+
+      document.getElementById('clear').addEventListener('click', () => {
+        messages = defaultConversation();
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        render();
+        input.focus();
+      });
+    </script>
+  </body>
+  </html>
+
+
