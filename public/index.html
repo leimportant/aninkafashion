@@ -22,19 +22,63 @@
       button { padding: 12px 16px; border-radius: 10px; border: none; background: #111; color: #fff; cursor: pointer; }
       button:disabled { opacity: .6; cursor: not-allowed; }
       .note { font-size: 12px; color: #666; margin-top: 8px; }
+      .info-box { background: #e8f4fd; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-top: 8px; }
+      .info-box h4 { margin: 0 0 8px 0; color: #0c5460; }
+      .info-box pre {
+          margin: 0; 
+          white-space: pre-wrap; 
+          font-family: inherit; 
+          white-space: pre-wrap;   /* biar tetap jaga line break tapi bisa wrap */
+          word-wrap: break-word;   /* support browser lama */
+          overflow-wrap: anywhere; 
+          max-width: 100%;   /* biar nggak melebar keluar */
+          overflow-x: auto;
+        }
+      .faq-box {
+         background: #fff3cd;
+          border: 1px solid #ffeaa7; 
+          border-radius: 5px; 
+          padding: 12px; 
+          margin-top: 5px;
+
+           /* ini penting untuk teks panjang */
+          word-wrap: break-word;       /* untuk browser lama */
+          overflow-wrap: anywhere;     /* modern, lebih fleksibel */
+          white-space: pre-wrap;       /* jaga line break & wrap teks */
+        }
+      .faq-box h4 { margin: 0 0 5px 0; color: #856404; }
+      .faq-box pre {
+          margin: 0; 
+          white-space: pre-wrap; 
+          font-family: inherit; 
+          white-space: pre-wrap;   /* biar tetap jaga line break tapi bisa wrap */
+          word-wrap: break-word;   /* support browser lama */
+          overflow-wrap: anywhere; 
+          max-width: 100%;   /* biar nggak melebar keluar */
+          overflow-x: auto;
+        }
+
     </style>
   </head>
   <body>
-    <header>
-      <strong>Aninka Fashion</strong> • AI Assistant
-    </header>
+
     <main>
       <div class="chat" id="chat"></div>
       <form id="form">
         <input id="input" type="text" placeholder="Tulis pertanyaan Anda..." autocomplete="off" />
         <div style="display:flex; gap:8px;">
-          <button type="submit">Kirim</button>
-          <button id="clear" type="button" style="background:#c22">Clear</button>
+          <button type="submit" style="background:#28a745; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; color:#fff; display:flex; align-items:center; gap:6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#fff" viewBox="0 0 24 24">
+              <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+            </svg>
+            
+          </button>
+          <button id="clear" type="button" style="background:#c22; border:none; padding:8px; border-radius:6px; cursor:pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 24 24">
+              <path d="M9 3v1H4v2h16V4h-5V3H9zm2 6v10h2V9h-2zm-4 0v10h2V9H7zm8 0v10h2V9h-2z"/>
+            </svg>
+          </button>
+          
         </div>
       </form>
       <div class="note">Bahasa utama: Indonesia. Contoh: "Ada gamis dress brokat warna krem?"</div>
@@ -65,6 +109,8 @@
           const p = document.createElement('div');
           p.textContent = m.content;
           div.appendChild(p);
+          
+          // Display products grid
           if (m.products && m.products.length) {
             const grid = document.createElement('div');
             grid.className = 'grid';
@@ -93,6 +139,46 @@
             });
             div.appendChild(grid);
           }
+          
+          // Display order info
+          if (m.orderInfo) {
+            const orderBox = document.createElement('div');
+            orderBox.className = 'info-box';
+            const orderTitle = document.createElement('h4');
+            orderTitle.textContent = '📦 Informasi Order';
+            const orderContent = document.createElement('pre');
+            orderContent.textContent = m.orderInfo.fullText;
+            orderBox.appendChild(orderTitle);
+            orderBox.appendChild(orderContent);
+            div.appendChild(orderBox);
+          }
+          
+          // Display tracking info
+          if (m.trackingInfo) {
+            const trackBox = document.createElement('div');
+            trackBox.className = 'info-box';
+            const trackTitle = document.createElement('h4');
+            trackTitle.textContent = '🚚 Status Pengiriman';
+            const trackContent = document.createElement('pre');
+            trackContent.textContent = m.trackingInfo.fullText;
+            trackBox.appendChild(trackTitle);
+            trackBox.appendChild(trackContent);
+            div.appendChild(trackBox);
+          }
+          
+          // Display FAQ info
+          if (m.faqInfo) {
+            const faqBox = document.createElement('div');
+            faqBox.className = 'faq-box';
+            const faqTitle = document.createElement('h4');
+            faqTitle.textContent = `❓ ${m.faqInfo.title}`;
+            const faqContent = document.createElement('pre');
+            faqContent.textContent = m.faqInfo.content;
+            faqBox.appendChild(faqTitle);
+            faqBox.appendChild(faqContent);
+            div.appendChild(faqBox);
+          }
+          
           chat.appendChild(div);
         }
         chat.scrollTop = chat.scrollHeight;
@@ -115,11 +201,20 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages })
           });
-      // Cookies akan dikirim otomatis oleh browser untuk origin yang sama
           const data = await res.json();
           const content = data?.message || data?.error || 'Maaf, terjadi kesalahan.';
           const products = Array.isArray(data?.products) ? data.products : [];
-          messages.push({ role: 'assistant', content, products });
+          const orderInfo = data?.orderInfo || null;
+          const trackingInfo = data?.trackingInfo || null;
+          const faqInfo = data?.faqInfo || null;
+          messages.push({ 
+            role: 'assistant', 
+            content, 
+            products,
+            orderInfo,
+            trackingInfo,
+            faqInfo
+          });
         } catch (err) {
           messages.push({ role: 'assistant', content: 'Maaf, jaringan bermasalah.' });
         } finally {
@@ -128,14 +223,19 @@
         }
       });
 
-      document.getElementById('clear').addEventListener('click', () => {
-        messages = defaultConversation();
-        try { localStorage.removeItem(STORAGE_KEY); } catch {}
-        render();
-        input.focus();
+       document.getElementById('clear').addEventListener('click', () => {
+        if (confirm("Apakah Anda yakin ingin menghapus semua percakapan?")) {
+          messages = defaultConversation();
+          try { 
+            localStorage.removeItem(STORAGE_KEY); 
+          } catch {}
+          render();
+          input.focus();
+        }
       });
+
     </script>
   </body>
-  </html>
+</html>
 
 

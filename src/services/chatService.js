@@ -2,6 +2,8 @@ import { loadLlamaProvider } from '../vendors/llamaProvider.js';
 import { loadGroqProvider } from '../vendors/groqProvider.js';
 import { detectProductQuery, fetchCatalogResults } from '../utils/catalog.js';
 import { getAuthHeadersFromCookieHeader, getAuthHeadersFromCookieValue, getAuthHeadersFromCookieMap } from '../utils/auth.js';
+import { detectFaqQuery, fetchFaqResults  } from '../utils/faq.js';
+import { detectOrderQuery, extractOrderNumber, fetchOrderStatus, formatOrderStatus, detectTrackingQuery, extractTrackingNumber, fetchTrackingInfo, formatTrackingInfo } from '../utils/orders.js';
 
 const SYSTEM_PROMPT = `You are an AI assistant for Aninka Fashion (aninkafashion.com).
 You help customers with:
@@ -40,45 +42,96 @@ export async function createChatService(options = {}) {
     const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
     let catalogContext = '';
     let structuredProducts = [];
-    if (lastUserMessage && detectProductQuery(lastUserMessage.content)) {
-      try {
-        const authHeadersFromHeader = getAuthHeadersFromCookieHeader(reqHeaders?.cookie || reqHeaders?.Cookie || '');
-        const authHeadersFromBody = getAuthHeadersFromCookieValue(authCookieValue);
-        const authHeadersFromCookies = getAuthHeadersFromCookieMap(reqCookies || {});
-        const authHeaders = { ...authHeadersFromHeader, ...authHeadersFromBody, ...authHeadersFromCookies };
-        const results = await fetchCatalogResults({ baseUrl: publicApiBaseUrl, query: lastUserMessage.content, headers: authHeaders });
-        if (results && results.length > 0) {
-          structuredProducts = results.slice(0, 6).map(r => {
-            const price = r.price_sell ?? r.price ?? r.harga ?? r.prices?.sale;
-            const name = r.product_name ?? r.name ?? r.title;
-            const category = r.category_name ?? r.category ?? '';
-            let imagePath = r.image_url || r.image || r.image_path || '';
-            let imageUrl = imagePath;
-            if (imagePath && !/^https?:\/\//i.test(imagePath)) {
-              imageUrl = `${publicApiBaseUrl.replace(/\/$/, '')}/storage/${imagePath}`;
-            }
-            return { name, price, category, imageUrl };
+    let orderInfo = null;
+    let trackingInfo = null;
+    let faqInfo = null;
+
+    if (lastUserMessage) {
+      const userText = lastUserMessage.content;
+
+      // Prepare auth headers once
+      const authHeadersFromHeader = getAuthHeadersFromCookieHeader(reqHeaders?.cookie || reqHeaders?.Cookie || '');
+      const authHeadersFromBody = getAuthHeadersFromCookieValue(authCookieValue);
+      const authHeadersFromCookies = getAuthHeadersFromCookieMap(reqCookies || {});
+      const authHeaders = { ...authHeadersFromHeader, ...authHeadersFromBody, ...authHeadersFromCookies };
+
+      // Check for FAQ intent first
+      if (detectFaqQuery(userText)) {
+        try {
+          const answers = await fetchFaqResults({ baseUrl: publicApiBaseUrl, query: userText, headers: authHeaders });
+          if (answers && answers.length) {
+            const content = Array.isArray(answers) ? String(answers[0]) : String(answers);
+            faqInfo = { title: 'FAQ', content };
+            fullMessages.push({ role: 'system', content: `Informasi FAQ: ${content}` });
+          }
+        } catch {}
+      }
+
+      // Check for order tracking
+      if (detectTrackingQuery(userText)) {
+        const trackingNumber = extractTrackingNumber(userText);
+        if (trackingNumber) {
+          const trackingData = await fetchTrackingInfo({ 
+            baseUrl: publicApiBaseUrl, 
+            trackingNumber, 
+            headers: authHeaders 
           });
-          catalogContext = `Katalog terkait:\n${structuredProducts.map(r => {
-            const price = r.price ?? r.harga ?? r.prices?.sale;
-            const discount = Number(r.discount ?? r.diskon ?? r.prices?.discount ?? 0);
-            const price_grosir = Number(r.price_grosir ?? r.prices?.grosir ?? 0);
-            const discount_grosir = Number(r.discount_grosir ?? r.prices?.discount_grosir ?? 0);
-            const label = r.name;
-
-            let text = `- ${label}`;
-            if (price != null) text += ` (Harga: Rp${price})`;
-            if (discount > 0) text += ` (Diskon ${discount}%)`;
-            if (price_grosir > 0) text += ` (Harga grosir: Rp${price_grosir} /min pembelian >1)`;
-            if (discount_grosir > 0) text += ` (Diskon grosir ${discount_grosir}%)`;
-
-            return text;
-          }).join('\n')}`;
-          
-          fullMessages.push({ role: 'system', content: `Gunakan konteks katalog berikut saat menjawab: ${catalogContext}` });
+          if (trackingData) {
+            trackingInfo = formatTrackingInfo(trackingData);
+            fullMessages.push({ role: 'system', content: `Informasi tracking: ${trackingInfo.fullText}` });
+          }
         }
-      } catch (e) {
-        // Swallow catalog errors; proceed without enrichment
+      }
+
+      // Check for order status
+      if (detectOrderQuery(userText)) {
+        const orderNumber = extractOrderNumber(userText);
+        if (orderNumber) {
+          const orderData = await fetchOrderStatus({ baseUrl: publicApiBaseUrl, orderNumber, headers: authHeaders });
+          if (orderData) {
+            orderInfo = formatOrderStatus(orderData);
+            fullMessages.push({ role: 'system', content: `Informasi order: ${orderInfo.fullText}` });
+          }
+        }
+      }
+
+      // Check for product queries
+      if (detectProductQuery(userText)) {
+        try {
+          const results = await fetchCatalogResults({ baseUrl: publicApiBaseUrl, query: lastUserMessage.content, headers: authHeaders });
+          if (results && results.length > 0) {
+            structuredProducts = results.slice(0, 6).map(r => {
+              const price = r.price_sell ?? r.price ?? r.harga ?? r.prices?.sale;
+              const name = r.product_name ?? r.name ?? r.title;
+              const category = r.category_name ?? r.category ?? '';
+              let imagePath = r.image_url || r.image || r.image_path || '';
+              let imageUrl = imagePath;
+              if (imagePath && !/^https?:\/\//i.test(imagePath)) {
+                imageUrl = `${publicApiBaseUrl.replace(/\/$/, '')}/storage/${imagePath}`;
+              }
+              return { name, price, category, imageUrl };
+            });
+            catalogContext = `Katalog terkait:\n${structuredProducts.map(r => {
+              const price = r.price ?? r.harga ?? r.prices?.sale;
+              const discount = Number(r.discount ?? r.diskon ?? r.prices?.discount ?? 0);
+              const price_grosir = Number(r.price_grosir ?? r.prices?.grosir ?? 0);
+              const discount_grosir = Number(r.discount_grosir ?? r.prices?.discount_grosir ?? 0);
+              const label = r.name;
+
+              let text = `- ${label}`;
+              if (price != null) text += ` (Harga: Rp${price})`;
+              if (discount > 0) text += ` (Diskon ${discount}%)`;
+              if (price_grosir > 0) text += ` (Harga grosir: Rp${price_grosir} /min pembelian >1)`;
+              if (discount_grosir > 0) text += ` (Diskon grosir ${discount_grosir}%)`;
+
+              return text;
+            }).join('\n')}`;
+            
+            fullMessages.push({ role: 'system', content: `Gunakan konteks katalog berikut saat menjawab: ${catalogContext}` });
+          }
+        } catch (e) {
+          // Swallow catalog errors; proceed without enrichment
+        }
       }
     }
 
@@ -88,7 +141,14 @@ export async function createChatService(options = {}) {
     for (const provider of providers) {
       try {
         const reply = await provider.complete(sanitizedMessages);
-        return { provider: provider.name, message: reply, products: structuredProducts };
+        return { 
+          provider: provider.name, 
+          message: reply, 
+          products: structuredProducts,
+          orderInfo,
+          trackingInfo,
+          faqInfo
+        };
       } catch (e) {
         console.error(`[chat] provider failed: ${provider.name}`, e);
         continue;
@@ -96,7 +156,14 @@ export async function createChatService(options = {}) {
     }
     // Graceful fallback per instruction
     const fallback = 'Ups, saya tidak memiliki informasi tersebut saat ini.';
-    return { provider: 'none', message: fallback, products: structuredProducts };
+    return { 
+      provider: 'none', 
+      message: fallback, 
+      products: structuredProducts,
+      orderInfo,
+      trackingInfo,
+      faqInfo
+    };
   }
 
   return { generateReply };

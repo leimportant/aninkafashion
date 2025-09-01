@@ -1,7 +1,6 @@
 const PRODUCT_KEYWORDS = [
   'gamis', "daster", "daster kulit", 'dress', 'abaya', 'hijab', 'kerudung', 'setelan', 'atasan', 'bawahan',
-  'kemeja', 'blouse', 'rok', 'jilbab', 'pashmina', 'khimar', 'manset', 'outer', 'cardigan',
-  'aksesoris', 'accessories', 'scarf', 'syal', 'sabuk', 'ikat pinggang', 'tas', 'sepatu'
+  'kemeja', 'blouse', 'rok', 'jilbab', 'pashmina', 'outer', 'cardigan'
 ];
 
 export function detectProductQuery(text) {
