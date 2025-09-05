@@ -1,8 +1,9 @@
 import { loadLlamaProvider } from '../vendors/llamaProvider.js';
 import { loadGroqProvider } from '../vendors/groqProvider.js';
 import { detectProductQuery, fetchCatalogResults } from '../utils/catalog.js';
-import { getAuthHeadersFromCookieHeader, getAuthHeadersFromCookieValue, getAuthHeadersFromCookieMap } from '../utils/auth.js';
+import { getAuthHeaders, getAuthHeadersFromCookieMap } from '../utils/auth.js';
 import { detectFaqQuery, fetchFaqResults  } from '../utils/faq.js';
+import { isVideo } from '../utils/media.js';
 import { detectOrderQuery, extractOrderNumber, fetchOrderStatus, formatOrderStatus, detectTrackingQuery, extractTrackingNumber, fetchTrackingInfo, formatTrackingInfo } from '../utils/orders.js';
 
 const SYSTEM_PROMPT = `You are an AI assistant for Aninka Fashion (aninkafashion.com).
@@ -50,9 +51,9 @@ export async function createChatService(options = {}) {
       const userText = lastUserMessage.content;
 
       // Prepare auth headers once
-      const authHeadersFromHeader = getAuthHeadersFromCookieHeader(reqHeaders?.cookie || reqHeaders?.Cookie || '');
-      const authHeadersFromBody = getAuthHeadersFromCookieValue(authCookieValue);
-      const authHeadersFromCookies = getAuthHeadersFromCookieMap(reqCookies || {});
+      const authHeadersFromHeader = getAuthHeaders(reqHeaders, authCookieValue);
+      const authHeadersFromBody = getAuthHeadersFromCookieMap(reqHeaders, authCookieValue);
+      const authHeadersFromCookies = getAuthHeadersFromCookieMap(reqHeaders, authCookieValue);
       const authHeaders = { ...authHeadersFromHeader, ...authHeadersFromBody, ...authHeadersFromCookies };
 
       // Check for FAQ intent first
@@ -104,26 +105,42 @@ export async function createChatService(options = {}) {
               const price = r.price_sell ?? r.price ?? r.harga ?? r.prices?.sale;
               const name = r.product_name ?? r.name ?? r.title;
               const category = r.category_name ?? r.category ?? '';
+              const description = r.product_description ?? r.description ?? '';
+              const color = description || '';
+              const sizes = Array.isArray(r.sizes) ? r.sizes.map(s => ({
+                label: s.size_id || s.variant || '',
+                qty_available: s.qty_available ?? s.qty_stock ?? 0,
+                price: s.price_sell ?? s.price ?? null
+              })) : [];
               let imagePath = r.image_url || r.image || r.image_path || '';
               let imageUrl = imagePath;
               if (imagePath && !/^https?:\/\//i.test(imagePath)) {
                 imageUrl = `${publicApiBaseUrl.replace(/\/$/, '')}/storage/${imagePath}`;
               }
-              return { name, price, category, imageUrl };
+
+              if (isVideo(imageUrl)) {
+                // Fallback: ambil gambar pertama dari gallery_images
+                if (Array.isArray(r.gallery_images) && r.gallery_images.length > 0) {
+                  let galleryPath = r.gallery_images[0]; // bisa loop kalau mau pilih tertentu
+                  if (galleryPath && !/^https?:\/\//i.test(galleryPath)) {
+                    imageUrl = `${publicApiBaseUrl.replace(/\/$/, '')}/storage/${galleryPath}`;
+                  } else {
+                    imageUrl = galleryPath;
+                  }
+                }
+              }
+
+              return { name, price, category, imageUrl, color, sizes };
             });
-            catalogContext = `Katalog terkait:\n${structuredProducts.map(r => {
-              const price = r.price ?? r.harga ?? r.prices?.sale;
-              const discount = Number(r.discount ?? r.diskon ?? r.prices?.discount ?? 0);
-              const price_grosir = Number(r.price_grosir ?? r.prices?.grosir ?? 0);
-              const discount_grosir = Number(r.discount_grosir ?? r.prices?.discount_grosir ?? 0);
-              const label = r.name;
-
-              let text = `- ${label}`;
+            catalogContext = `Katalog terkait:\n${structuredProducts.map(p => {
+              const price = p.price;
+              let text = `- ${p.name}`;
               if (price != null) text += ` (Harga: Rp${price})`;
-              if (discount > 0) text += ` (Diskon ${discount}%)`;
-              if (price_grosir > 0) text += ` (Harga grosir: Rp${price_grosir} /min pembelian >1)`;
-              if (discount_grosir > 0) text += ` (Diskon grosir ${discount_grosir}%)`;
-
+              if (p.color) text += ` | Warna: ${p.color}`;
+              if (Array.isArray(p.sizes) && p.sizes.length) {
+                const sizeList = p.sizes.map(s => `${s.label}${s.qty_available ? `(${s.qty_available})` : ''}`).join(', ');
+                text += ` | Ukuran: ${sizeList}`;
+              }
               return text;
             }).join('\n')}`;
             

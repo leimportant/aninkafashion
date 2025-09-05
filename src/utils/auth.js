@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 
-export function getCookieValue(cookieHeader, name) {
+// These functions are helpers and do not need to be exported
+function getCookieValue(cookieHeader, name) {
   if (!cookieHeader || !name) return null;
   const parts = cookieHeader.split(/;\s*/);
   for (const part of parts) {
@@ -10,7 +11,7 @@ export function getCookieValue(cookieHeader, name) {
   return null;
 }
 
-export function decryptLaravelCookie(cookie) {
+function decryptLaravelCookie(cookie) {
   if (!cookie) return null;
   try {
     const payload = JSON.parse(Buffer.from(cookie, 'base64').toString());
@@ -19,7 +20,9 @@ export function decryptLaravelCookie(cookie) {
     const mac = payload.mac;
 
     let appKey = process.env.ANINKA_APP_KEY;
-    if (!appKey) throw new Error('APP_KEY not found in environment variables.');
+    if (!appKey) {
+      throw new Error('APP_KEY not found in environment variables.');
+    }
 
     const decodedAppKey = Buffer.from(appKey.replace('base64:', ''), 'base64');
     const encryptionKey = decodedAppKey;
@@ -28,7 +31,9 @@ export function decryptLaravelCookie(cookie) {
       .createHmac('sha256', encryptionKey)
       .update(payload.iv + payload.value)
       .digest('hex');
-    if (expectedMac !== mac) throw new Error('Invalid MAC — possible tampering or wrong APP_KEY.');
+    if (expectedMac !== mac) {
+      throw new Error('Invalid MAC — possible tampering or wrong APP_KEY.');
+    }
 
     const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKey, iv);
     decipher.setAutoPadding(true);
@@ -41,7 +46,7 @@ export function decryptLaravelCookie(cookie) {
   }
 }
 
-export function extractAuthToken(cookie) {
+function extractAuthToken(cookie) {
   const decrypted = decryptLaravelCookie(cookie);
   if (!decrypted) return null;
   try {
@@ -62,46 +67,36 @@ export function extractAuthToken(cookie) {
   }
 }
 
-export function getAuthHeadersFromCookieHeader(cookieHeader) {
-  const cookieName = process.env.ANINKA_COOKIE_NAME || 'aninka_session';
-  const enc = getCookieValue(cookieHeader || '', cookieName);
-  if (!enc) return {};
-  const token = extractAuthToken(enc);
-  if (!token) return {};
-  return {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-}
 
-export function getAuthHeadersFromCookieValue(cookieValue) {
-  if (!cookieValue) return {};
-  const token = extractAuthToken(cookieValue);
-  if (!token) return {};
-  return {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-}
+// This is the new, single, and correct function for server-side use.
+export function getAuthHeaders(reqHeaders, reqCookies) {
+  // 1. Check for a bearer token in the Authorization header
+  const authHeader = reqHeaders?.Authorization || reqHeaders?.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    
+    const bearerToken = authHeader.split(' ').pop();
+    console.log('bearerToken from Authorization header', bearerToken);
+    return {
+      Authorization: `Bearer ${bearerToken}`,
+      'Content-Type': 'application/json',
+    };
+  }
 
-export function getAuthHeadersFromCookieMap(cookies = {}) {
- 
-  const cookieToken = cookies['aninkafashion-token'] || cookies['aninkafashion_token'] || cookies['TOKEN'];
+  // 2. Fallback: Check for the token in the cookies
+  const cookieToken = reqCookies?.['aninkafashion-token'] || reqCookies?.['aninkafashion_token'] || reqCookies?.['TOKEN'];
   if (cookieToken) {
-  
     let bearerToken;
     if (cookieToken.includes('|')) {
       bearerToken = cookieToken;
     } else {
       const decrypted = decryptLaravelCookie(cookieToken);
-      if (!decrypted) {
-        return {};
-      }
+      if (!decrypted) return {};
       const parts = decrypted.split('|');
       if (parts.length === 3) bearerToken = `${parts[1]}|${parts[2]}`;
       else if (parts.length === 2) bearerToken = `${parts[0]}|${parts[1]}`;
       else bearerToken = decrypted;
     }
+    console.log('bearerToken from cookie', bearerToken);
     if (bearerToken) {
       return {
         Authorization: `Bearer ${bearerToken}`,
@@ -109,16 +104,37 @@ export function getAuthHeadersFromCookieMap(cookies = {}) {
       };
     }
   }
-  // Fallback to Laravel encrypted session cookie
+
+  // 3. Final Fallback: Check the Laravel encrypted session cookie
   const cookieName = process.env.ANINKA_COOKIE_NAME || 'aninka_session';
-  const enc = cookies[cookieName];
-  if (!enc) return {};
-  const token = extractAuthToken(enc);
-  if (!token) return {};
-  return {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
+  const enc = reqCookies?.[cookieName];
+  if (enc) {
+    const token = extractAuthToken(enc);
+    if (token) {
+      console.log('token from session', token);
+      return {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+    }
+  }
+
+  // If no valid token is found anywhere, return empty headers
+  return {};
 }
 
+// These functions are no longer needed, as their logic is now in getAuthHeaders
+// You can remove them to clean up your code.
+export function getAuthHeadersFromCookieHeader() {
+  console.warn("getAuthHeadersFromCookieHeader is deprecated. Use getAuthHeaders instead.");
+  return {};
+}
 
+export function getAuthHeadersFromCookieValue() {
+  console.warn("getAuthHeadersFromCookieValue is deprecated. Use getAuthHeaders instead.");
+  return {};
+}
+export function getAuthHeadersFromCookieMap() {
+  console.warn("getAuthHeadersFromCookieMap is deprecated. Use getAuthHeaders instead.");
+  return {};
+}

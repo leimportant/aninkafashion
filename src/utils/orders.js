@@ -4,6 +4,7 @@ export function detectOrderQuery(text) {
   const orderKeywords = [
     'order', 'pesanan', 'tracking', 'lacak', 'status', 'resi', 'no resi',
     'kirim', 'terima', 'diterima', 'proses', 'dalam proses', 'selesai',
+    'belum bayar', 'bayar', 'pembayaran', 'paid', 'dibayar', 'sudah bayar',
     'order id', 'order number', 'nomor pesanan', 'invoice', 'faktur'
   ];
   return orderKeywords.some(k => normalized.includes(k));
@@ -27,9 +28,9 @@ export function extractOrderNumber(text) {
 }
 
 export async function fetchOrderStatus({ baseUrl, orderNumber, headers }) {
-  if (!orderNumber) return null;
+  if (!orderNumber || !baseUrl) return null;
   
-  const url = `${baseUrl.replace(/\/$/, '')}/api/orders/${orderNumber}`;
+  const url = `${baseUrl.replace(/\/$/, '')}/api/orders/status?q=${encodeURIComponent(orderNumber)}`;
   try {
     const res = await fetch(url, { 
       headers, 
@@ -130,7 +131,7 @@ export function formatOrderStatus(orderData) {
       statusText = `Status: ${status}`;
   }
   
-  
+
   const itemList = items.map(item => 
     `${item.product_name || item.name} (${item.quantity || 1} pcs)`
   ).join(', ');
@@ -151,16 +152,15 @@ export function formatOrderStatus(orderData) {
 export function detectTrackingQuery(text) {
   if (!text) return false;
   const normalized = String(text).toLowerCase();
-  const trackingKeywords = [
-    'resi', 'tracking', 'lacak', 'no resi', 'nomor resi', 'awb', 'waybill',
-    'kirim', 'dikirim', 'kurir', 'ekspedisi', 'jne', 'sicepat', 'jt'
+  const summaryOrderKeywords = [
+    'bulan ini', 'bulan lalu', 'minggu ini', 'hari ini', 'summary', 'ringkasan', "semua", "all"
   ];
-  return trackingKeywords.some(k => normalized.includes(k));
+  return summaryOrderKeywords.some(k => normalized.includes(k));
 }
 
 export function extractTrackingNumber(text) {
   if (!text) return null;
-  // Pattern untuk tracking number
+  // Pattern untuk tracking number atau query summary
   const patterns = [
     /resi\s*[#:]?\s*([A-Z0-9]{10,20})/i,
     /tracking\s*[#:]?\s*([A-Z0-9]{10,20})/i,
@@ -176,10 +176,11 @@ export function extractTrackingNumber(text) {
   return null;
 }
 
-export async function fetchTrackingInfo({ baseUrl, trackingNumber, headers }) {
-  if (!trackingNumber) return null;
+export async function fetchTrackingInfo({ baseUrl, query, headers }) {
+  if (!baseUrl) return null;
   
-  const url = `${baseUrl.replace(/\/$/, '')}/api/tracking/${trackingNumber}`;
+  // Use orders/summary endpoint for tracking/summary queries
+  const url = `${baseUrl.replace(/\/$/, '')}/api/orders/summary?q=${encodeURIComponent(query)}`;
   try {
     const res = await fetch(url, { 
       headers, 
@@ -187,7 +188,7 @@ export async function fetchTrackingInfo({ baseUrl, trackingNumber, headers }) {
     });
     
     if (!res.ok) {
-      console.log(`Tracking fetch failed: ${res.status}`);
+      console.log(`Tracking/summary fetch failed: ${res.status}`);
       return null;
     }
     
@@ -202,6 +203,37 @@ export async function fetchTrackingInfo({ baseUrl, trackingNumber, headers }) {
 export function formatTrackingInfo(trackingData) {
   if (!trackingData) return null;
   
+  // Handle both tracking and summary data
+  if (trackingData.summary || trackingData.orders) {
+    // This is summary data
+    const summary = trackingData.summary || {};
+    const orders = trackingData.orders || [];
+    
+    let summaryText = 'Ringkasan Pesanan:\n';
+    if (summary.total_orders) summaryText += `Total Pesanan: ${summary.total_orders}\n`;
+    if (summary.total_amount) summaryText += `Total Nilai: Rp${summary.total_amount.toLocaleString()}\n`;
+    if (summary.pending_orders) summaryText += `Menunggu: ${summary.pending_orders}\n`;
+    if (summary.completed_orders) summaryText += `Selesai: ${summary.completed_orders}\n`;
+    
+    if (orders.length > 0) {
+      summaryText += '\nPesanan Terbaru:\n';
+      orders.slice(0, 5).forEach((order, idx) => {
+        const status = order.status || 'unknown';
+        const amount = order.total || order.total_amount || 0;
+        summaryText += `${idx + 1}. Order #${order.order_number || order.id} - Rp${amount.toLocaleString()} (${status})\n`;
+      });
+    }
+    
+    return {
+      trackingNumber: 'Summary',
+      status: 'Ringkasan',
+      courier: 'N/A',
+      history: '',
+      fullText: summaryText
+    };
+  }
+  
+  // Handle traditional tracking data
   const trackingNumber = trackingData.tracking_number || trackingData.awb || trackingData.resi;
   const status = trackingData.status || trackingData.current_status || 'unknown';
   const history = trackingData.history || trackingData.tracking_history || [];

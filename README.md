@@ -1,65 +1,71 @@
-# Aninka Fashion Chat AI 👗🤖
-Node.js 22 service with local GGUF (optional) and Groq fallback.  
-Serves `/api/chat` and UI at `/`.
+# AninkaFashion – Accelerate with Llama: Smart Fashion for Resellers
 
----
+## 🚀 Overview
+AninkaFashion is an AI-powered fashion ecosystem designed to support small fashion owners and resellers.  
+It helps owners calculate production costs (COGS) and manage workflows, enables resellers to easily browse products and confirm transactions without waiting for slow admin responses, and enhances customer experience with Llama AI for personalized recommendations, virtual try-on, and smart sizing.
 
-## 🚀 Setup
+## ✨ Key Features
+- **Production Management** → automatic COGS calculation, order progress tracking, and material management.  
+- **Reseller Access** → instant product discovery, simple ordering, and transparent transaction updates.  
+- **Llama AI Chatbot** → product Q&A, personal stylist, smart sizing, and virtual try-on.  
+- **Integrated POS** → sync offline & online sales, with multiple payment methods.  
+- **Progressive Web App (PWA)** → lightweight, fast, offline-ready, and cross-platform.  
 
-1. Clone repo:
-   ```bash
-   git clone https://github.com/leimportant/hacktiv8-groq-aninkafashion-ai-assistant.git
-   cd hacktiv8-groq-aninkafashion-ai-assistant
+## 🛠 Tech Stack
+- **Web App (PWA):** Laravel, Inertia, TypeScript, Tailwind CSS  
+- **Chatbot AI:** Node.js, Groq API (Llama)  
+- **Platform:** Progressive Web App (PWA)  
 
-   Buka http://localhost:3300
- di browser.
+## ⚡ How to Run
 
-📦 Features
+### Web App
+```bash
+git clone https://github.com/leimportant/konveksi-starter.git
+cd konveksi-starter
 
-Chat endpoint → POST /api/chat
+# install dependencies
+npm install
+composer install
 
-UI → tersedia di /
+# run development
+npm run dev
+php artisan serve
 
-Hybrid Model Loading:
+Chatbot AI
+git clone https://github.com/leimportant/aninkafashion.git
+cd aninkafashion
 
-Gunakan local GGUF (Llama model) jika tersedia
+# install dependencies
+npm install
 
-Fallback ke Groq API bila local gagal
+# run chatbot
+npm run dev
 
-E-commerce Search Integration:
+.env example
+PORT=3000
+GROQ_MODEL=llama-3.1-8b-instant
+GROQ_API_KEY=your_groq_api_key
+ANINKA_APP_KEY=your_laravel_app_key
+ANINKA_APP_URL=http://localhost:8000
 
-Query produk/kategori (misalnya: gamis, dress, setelan)
+📅 Roadmap
 
-Fetch ke PUBLIC_API → /api/search?q=...
+0–6 months: MVP with POS, COGS calculator, basic chatbot (FAQ).
 
-Hasil disingkat & dipakai sebagai konteks model
+6–12 months: Virtual try-on, AI size recommendations, reseller system.
 
-🖼️ Architecture
-flowchart TD
-    U[User 👩‍💻] -->|Chat request| A[Chat API /api/chat]
-    A -->|Check local GGUF| L[Local LLaMA GGUF Model]
-    A -->|Fallback if no model| G[Groq API]
-    A -->|If query = produk| P[Public API /api/search?q=...]
-    P --> A
-    L --> A
-    G --> A
-    A -->|Response| U
-
-📝 Notes
-
-Pastikan model .gguf sesuai path di .env.
-
-Jika tidak ada file model lokal, pastikan GROQ_API_KEY tersedia.
-
-Cocok untuk integrasi Fashion E-commerce Chatbot.
-
-📜 License
-
-MIT
+12–18 months: AI fashion trend analysis and data monetization.
 
 
----
+## 📄 Documentation
+- Business Proposal : [Business_Proposal_AninkaFashion_Llama.docx](https://github.com/leimportant/aninkafashion/blob/main/docs/BusinessProposalAninkaFashion_Llama.pdf)  
 
-📌 Mermaid diagram (`Architecture`) akan otomatis jadi diagram kalau GitHub render Markdown.  
 
-👉 Mau saya tambahin juga **contoh request & response JSON** dari `/api/chat` biar lebih developer-friend
+
+🔗 Repositories
+
+## 🔗 Repositories
+- **Main Repo (Docs + Chatbot AI):** [aninkafashion](https://github.com/leimportant/aninkafashion)  
+- **Web App (PWA):** [konveksi-starter](https://github.com/leimportant/konveksi-starter)  
+
+

@@ -4,20 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Assistant AI - Aninka Fashion</title>
-    <!-- Warna status bar -->
-    <meta name="theme-color" content="#16a34a" />
-
-    <!-- Tambahkan manifest (tanpa install, hanya info PWA) -->
-    <link rel="manifest" href="/manifest.json" />
-
-    <!-- iOS support -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="apple-mobile-web-app-title" content="Chat Assistant" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <style>
       body {
         font-family: system-ui, Arial, sans-serif;
@@ -25,66 +11,11 @@
         background: #f7f7f8;
         color: #111;
       }
-
-      :root {
-        --green: #16a34a; /* tailwind green-600 */
-        --gray: #6b7280; /* tailwind gray-500 */
-        --border: #e5e7eb; /* tailwind gray-200 */
-        --shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
-        --maxw: 44rem; /* ~max-w-md */
-      }
-      .bottom-nav {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #fff;
-        border-top: 1px solid var(--border);
-        box-shadow: var(--shadow);
-        z-index: 999;
-      }
-      .bottom-nav nav {
-        height: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: space-around;
-        max-width: var(--maxw);
-        margin: 0 auto;
-        padding: 0 0.5rem;
-      }
-      .nav-link {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0.5rem 1rem;
-        text-decoration: none;
-        color: var(--gray);
-        gap: 0.25rem;
-        font-size: 0.75rem; /* text-xs */
-      }
-      .nav-link svg {
-        width: 20px;
-        height: 20px;
-      }
-      .nav-link.active {
-        color: var(--green);
-        font-weight: 600;
-      }
-      /* safe-area for iOS notch */
-      .spacer {
-        height: 64px;
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      .bottom-nav {
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-
       header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 16px 1rem;
+       justify-content: space-between;
+         padding: 16px 1rem;
         background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
         color: hsl(var(--foreground));
         border-bottom: 1px solid #e5e7eb;
@@ -121,6 +52,8 @@
         cursor: pointer;
       }
 
+    
+  
       header .back-btn:hover {
         background: #e5e7eb; /* gray-200 */
         color: #2563eb; /* blue-600 */
@@ -223,35 +156,35 @@
         opacity: 0.6;
         cursor: not-allowed;
       }
-      .suggestions {
-        display: none;
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: calc(100% + 10px);
-        align-items: flex-start; /* biar bubble nempel kiri */
-        display: flex; /* pakai flex */
-        flex-direction: column;
-        gap: 8px; /* jarak antar bubble */
-        background: transparent; /* hapus background kotak besar */
-        border: none; /* hilangkan border kotak besar */
-        box-shadow: none; /* hilangkan shadow utama */
-        z-index: 50;
-      }
+     .suggestions {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 10px);
+  align-items: flex-start; /* biar bubble nempel kiri */
+  display: flex;               /* pakai flex */
+  flex-direction: column;      
+  gap: 8px;                    /* jarak antar bubble */
+  background: transparent;     /* hapus background kotak besar */
+  border: none;                /* hilangkan border kotak besar */
+  box-shadow: none;            /* hilangkan shadow utama */
+  z-index: 50;
+}
 
-      .suggestion-item {
-        background: #ffffff;
-        padding: 10px;
-        border-radius: 20px;
-        box-shadow: 0 4px 10px rgba(225, 224, 224, 0.08);
-        cursor: pointer;
-        transition: background 0.2s, transform 0.15s;
-      }
+.suggestion-item {
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(225, 224, 224, 0.08);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
 
-      .suggestion-item:hover {
-        background: #f9fafb;
-        transform: translateY(-2px); /* efek bubble naik sedikit */
-      }
+.suggestion-item:hover {
+  background: #f9fafb;
+  transform: translateY(-2px); /* efek bubble naik sedikit */
+}
       .note {
         font-size: 12px;
         color: #666;
@@ -309,6 +242,7 @@
   <body>
     <header>
       <div class="left">
+        
         <a
           href="https://aninkafashion.com/home"
           class="back-btn"
@@ -367,7 +301,7 @@
             autocomplete="off"
           />
         </div>
-
+        
         <div style="display: flex; gap: 8px">
           <button
             type="submit"
@@ -399,141 +333,8 @@
         Bahasa utama: Indonesia. Contoh: "Ada gamis dress brokat warna krem?"
       </div>
     </main>
-
-    <!-- Spacer agar konten tidak ketutup navbar -->
-    <div class="spacer" aria-hidden="true"></div>
-
-    <!-- Bottom Navigation -->
-    <div class="bottom-nav" role="navigation" aria-label="Bottom Navigation">
-      <nav>
-        <!-- Home -->
-        <a class="nav-link" href="/home" data-path="/home" aria-label="Home">
-          <!-- lucide: home -->
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 9l9-7 9 7"></path>
-            <path d="M9 22V12h6v10"></path>
-            <path d="M2 10l10-8 10 8v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"></path>
-          </svg>
-          <span>Home</span>
-        </a>
-
-        <!-- Order -->
-        <a
-          class="nav-link"
-          href="/order-history"
-          data-path="/order-history"
-          aria-label="Order"
-        >
-          <!-- lucide: shopping-cart -->
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path
-              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
-            ></path>
-          </svg>
-          <span>Order</span>
-        </a>
-
-        <!-- Profile -->
-        <a
-          class="nav-link"
-          href="/settings/profile"
-          data-path="/settings/profile"
-          aria-label="Profile"
-        >
-          <!-- lucide: user -->
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 21a8 8 0 1 0-16 0"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <span>Profile</span>
-        </a>
-
-        <!-- Chat Assistant -->
-        <a
-          class="nav-link"
-          href="/assistant-ai"
-          data-path="/assistant-ai"
-          aria-label="Chat Assistant"
-        >
-          <!-- lucide: message-circle-heart -->
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7h-1.1a8.38 8.38 0 0 1-3.8-.9L3 21l1.9-4.6a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 1 1 16.9 0Z"
-            ></path>
-            <path
-              d="M12 8.5C11 7.5 9.5 7.5 8.5 8.5s-1 2.5 0 3.5L12 16l3.5-4c1-1 1-2.5 0-3.5s-2.5-1-3.5 0Z"
-            ></path>
-          </svg>
-          <span>Chat Assistant</span>
-        </a>
-      </nav>
-    </div>
-
-    <div style="display: none" id="tokenBox"></div>
+     <div style="display: none;" id="tokenBox"></div>
     <script>
-      // Set active berdasarkan path saat ini
-      (function () {
-        var current = location.pathname.replace(/\/$/, "");
-        if (current === "") current = "/"; // root
-        document.querySelectorAll(".nav-link").forEach(function (a) {
-          var target = (a.getAttribute("data-path") || "").replace(/\/$/, "");
-          if (target && target === current) a.classList.add("active");
-        });
-      })();
-      // Load config.json untuk base URL
-    fetch("./config.json")
-      .then(r => r.json())
-      .then(cfg => {
-        const baseUrl = cfg.ANINKA_APP_URL.replace(/\/$/, "");
-
-        // set href pada tiap link
-        document.querySelectorAll(".nav-link").forEach(a => {
-          const path = a.getAttribute("data-path");
-          a.href = baseUrl + path;
-
-          // tandai aktif
-          const current = location.pathname.replace(/\/$/, "");
-          if (path === current) a.classList.add("active");
-        });
-      })
-      .catch(err => {
-        console.error("Config load error", err);
-      });
-
       const chat = document.getElementById("chat");
       const form = document.getElementById("form");
       const input = document.getElementById("input");
@@ -545,20 +346,20 @@
       const url = new URL(window.location.href);
 
       // Get the value of the '_token' query parameter
-      const tokenFromUrl = url.searchParams.get("_token");
+      const tokenFromUrl = url.searchParams.get('_token');
 
       // Log and store the token if it exists
       if (tokenFromUrl) {
-        localStorage.setItem("aninkafashion-token", tokenFromUrl);
+        localStorage.setItem('aninkafashion-token', tokenFromUrl);
         // document.cookie = `aninkafashion-token=${tokenFromUrl}; expires=${expirationDate.toUTCString()}; path=/`;
         console.log("Token from URL:", tokenFromUrl);
       } else {
         console.log("No token found in URL.");
       }
 
-      if (url.searchParams.has("_token")) {
+      if (url.searchParams.has('_token')) {
         // Hapus parameter '_token'
-        url.searchParams.delete("_token");
+        url.searchParams.delete('_token');
 
         // Ganti URL di browser tanpa me-refresh halaman
         window.history.replaceState({}, document.title, url.toString());
@@ -567,18 +368,18 @@
       }
 
       function getClientAuthHeaders() {
-        const token = localStorage.getItem("aninkafashion-token");
-        const headers = {
-          "Content-Type": "application/json",
-        };
-
-        // Jika token ada di localStorage, tambahkan ke header otorisasi
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
+          const token = localStorage.getItem('aninkafashion-token');
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+          
+          // Jika token ada di localStorage, tambahkan ke header otorisasi
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          return headers;
         }
-
-        return headers;
-      }
 
       function defaultConversation() {
         return [
@@ -599,39 +400,13 @@
         messages = defaultConversation();
       }
 
-      function stripHtml(html) {
-        const tmp = document.createElement("div");
-        tmp.innerHTML = html;
-        return tmp.textContent || tmp.innerText || "";
-      }
-
-      function formatMessage(text) {
-        if (!text) return "";
-
-        // escape dulu karakter HTML biar aman dari XSS
-        let escaped = text
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-
-        // parsing sederhana markdown-like
-        // **bold**
-        escaped = escaped.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
-        // *italic*
-        escaped = escaped.replace(/\*(.*?)\*/g, "<i>$1</i>");
-        // `code`
-        escaped = escaped.replace(/`(.*?)`/g, "<code>$1</code>");
-
-        return escaped;
-      }
-
       function render() {
         chat.innerHTML = "";
         for (const m of messages) {
           const div = document.createElement("div");
           div.className = `msg ${m.role === "user" ? "user" : "assistant"}`;
           const p = document.createElement("div");
-          p.innerHTML = formatMessage(m.content); // pakai innerHTML biar bisa render tag HTML
+          p.innerHTML = m.content;
           div.appendChild(p);
 
           // Display products grid
@@ -642,7 +417,6 @@
               const card = document.createElement("div");
               card.className = "card";
 
-              // gambar
               const img = document.createElement("img");
               img.src = prod.imageUrl || "";
               img.alt = prod.name || "";
@@ -657,52 +431,37 @@
               price.className = "price";
               price.textContent = prod.price ? `Rp${prod.price}` : "";
 
-              const cat = document.createElement("div");
-              cat.className = "cat";
-              cat.textContent = prod.category || "";
-
               // description dari API (HTML)
               if (prod.description) {
-                
-                ///
                 const desc = document.createElement("div");
                 desc.className = "description";
                 desc.innerHTML = prod.description; // render HTML <p>...</p>
                 info.appendChild(desc);
               }
 
-              // color kalau ada
-              if (prod.color) {
-                const colDesc = prod.color || "";
-                const cleanCol = stripHtml(colDesc);          // buang <p>, <div>, dll.
-                const formatted = formatMessage(cleanCol);    // apply markdown-like
+              const cat = document.createElement("div");
+              cat.className = "cat";
+              cat.textContent = prod.category || "";
 
-                const colorDiv = document.createElement("div");
-                colorDiv.className = "color";
-                colorDiv.innerHTML = formatted;
-
-                info.appendChild(colorDiv);
-              }
-
-
-              // sizes
+              const color = document.createElement("div");
+              color.className = "color";
+              if (prod.color) color.textContent = prod.color;
               const sizes = document.createElement("div");
               sizes.className = "sizes";
               if (Array.isArray(prod.sizes) && prod.sizes.length) {
-                prod.sizes.forEach((s) => {
+                prod.sizes.forEach(s => {
                   const badge = document.createElement("span");
                   badge.className = "size-badge";
-                  const qty =
-                    s.qty_available != null ? ` (${s.qty_available})` : "";
+                  const qty = s.qty_available != null ? ` (${s.qty_available})` : "";
                   badge.textContent = `${s.label || ""}${qty}`;
                   sizes.appendChild(badge);
                 });
               }
-              if (sizes.childElementCount) info.appendChild(sizes);
-
               info.appendChild(name);
               info.appendChild(price);
               info.appendChild(cat);
+              if (prod.color) info.appendChild(color);
+              if (sizes.childElementCount) info.appendChild(sizes);
               card.appendChild(img);
               card.appendChild(info);
               grid.appendChild(card);
@@ -817,8 +576,6 @@
         "Cari Daster chibi Twill",
         "Cara Retur",
         "Order Minggu ini",
-        "Pesanan yang belum dibayar",
-        ""
       ];
 
       const suggestionsBox = document.createElement("div");
