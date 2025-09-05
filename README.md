@@ -59,7 +59,7 @@ ANINKA_APP_URL=http://localhost:8000
 
 
 ## 📄 Documentation
-- Business Proposal : [Business_Proposal_AninkaFashion_Llama.pdf](https://github.com/leimportant/aninkafashion/blob/docs/BusinessProposalAninkaFashion_Llama.pdf)  
+- Business Proposal : [BusinessProposal_AninkaFashion_Llama.pdf](https://github.com/leimportant/aninkafashion/blob/docs/BusinessProposal_AninkaFashion_Llama.pdf)  
 
 
 
