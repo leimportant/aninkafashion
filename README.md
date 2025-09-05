@@ -48,7 +48,8 @@ GROQ_API_KEY=your_groq_api_key
 ANINKA_APP_KEY=your_laravel_app_key
 ANINKA_APP_URL=http://localhost:8000
 
-📅 Roadmap
+```
+## 📅 Roadmap
 
 0–6 months: MVP with POS, COGS calculator, basic chatbot (FAQ).
 
@@ -61,8 +62,6 @@ ANINKA_APP_URL=http://localhost:8000
 - Business Proposal : [Business_Proposal_AninkaFashion_Llama.docx](https://github.com/leimportant/aninkafashion/blob/main/docs/BusinessProposalAninkaFashion_Llama.pdf)  
 
 
-
-🔗 Repositories
 
 ## 🔗 Repositories
 - **Main Repo (Docs + Chatbot AI):** [aninkafashion](https://github.com/leimportant/aninkafashion)  
